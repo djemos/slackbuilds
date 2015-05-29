@@ -64,7 +64,11 @@ patch -p0 < $CWD/r5010.diff
 patch -p0 < $CWD/r5013.diff
 patch -p0 < $CWD/r5033.diff
 patch -p0 < $CWD/r5037.diff
+# Fix build with boost-1.58 (-current)
+patch -p0 < $CWD/r5012.diff
 
+aclocal
+automake --add-missing
 autoreconf
 
 [ "${FFMPEG:-yes}" = "no" ] && EXTRAOPT=--disable-ffmpeg
