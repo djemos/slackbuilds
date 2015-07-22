@@ -81,6 +81,7 @@ cd build
     -DDIGIKAMSC_COMPILE_LIBKVKONTAKTE=ON \
     -DDIGIKAMSC_COMPILE_LIBKFACE=ON \
     -DDIGIKAMSC_COMPILE_DOC=OFF \
+    -DCMAKE_CXX_FLAGS:STRING="$(/usr/bin/Magick++-config --libs)" \
     -DCMAKE_BUILD_TYPE=Release ..
   make
   make install DESTDIR=$PKG
