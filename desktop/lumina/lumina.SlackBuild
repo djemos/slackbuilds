@@ -83,7 +83,7 @@ qmake-qt5 \
   QMAKE_CXXFLAGS="$SLKCFLAGS" \
   QT5LIBDIR=/usr/lib${LIBDIRSUFFIX}/qt5
 
-make
+make -j1
 make install \
   INSTALL_ROOT=$PKG \
   DESTDIR=$PKG
