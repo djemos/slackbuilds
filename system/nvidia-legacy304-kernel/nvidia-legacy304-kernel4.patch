@@ -1,0 +1,53 @@
+--- a/nv.c 2014-12-01 19:58:34.000000000 -0800
++++ b/nv.c 2015-07-09 16:45:09.997840781 -0700
+@@ -2026,7 +2026,11 @@
+     unsigned long i_arg
+ )
+ {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 20, 0)
+     return nv_kern_ioctl(file->f_dentry->d_inode, file, cmd, i_arg);
++#else
++    return nv_kern_ioctl(file_inode(file), file, cmd, i_arg);
++#endif
+ }
+ 
+ long nv_kern_compat_ioctl(
+@@ -2035,7 +2039,11 @@
+ unsigned long i_arg
+ )
+ {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 20, 0)
+     return nv_kern_ioctl(file->f_dentry->d_inode, file, cmd, i_arg);
++#else
++    return nv_kern_ioctl(file_inode(file), file, cmd, i_arg);
++#endif
+ }
+ 
+ /*
+--- a/nv-pat.c 2014-12-01 19:58:34.000000000 -0800
++++ b/nv-pat.c 2015-07-09 16:48:00.069823572 -0700
+@@ -35,8 +35,13 @@
+     unsigned long cr0 = read_cr0();
+     write_cr0(((cr0 & (0xdfffffff)) | 0x40000000));
+     wbinvd();
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 20, 0)
+     *cr4 = read_cr4();
+     if (*cr4 & 0x80) write_cr4(*cr4 & ~0x80);
++#else
++    *cr4 = __read_cr4();
++    if (*cr4 & 0x80) __write_cr4(*cr4 & ~0x80);
++#endif
+     __flush_tlb();
+ }
+ 
+@@ -46,7 +51,11 @@
+     wbinvd();
+     __flush_tlb();
+     write_cr0((cr0 & 0x9fffffff));
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 20, 0)
+     if (cr4 & 0x80) write_cr4(cr4);
++#else
++    if (cr4 & 0x80) __write_cr4(cr4);
++#endif   
+ }
+  static int nv_determine_pat_mode(void)

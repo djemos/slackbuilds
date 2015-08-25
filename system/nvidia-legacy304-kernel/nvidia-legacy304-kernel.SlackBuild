@@ -79,6 +79,9 @@ find -L . \
 
 cd kernel || exit 1
 
+# Apply patch from nvidia-devel to build with 4.x kernels
+patch -p1 < $CWD/nvidia-legacy304-kernel4.patch
+
 make SYSSRC=$KERNELPATH module || exit 1
 
 mkdir -p $PKG/lib/modules/$KERNEL/kernel/drivers/video
