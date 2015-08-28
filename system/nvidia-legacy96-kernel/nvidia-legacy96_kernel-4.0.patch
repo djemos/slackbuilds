@@ -1,7 +1,97 @@
-diff -pur 1/conftest.sh 2/conftest.sh
---- 1/conftest.sh	2012-09-01 02:04:44.000000000 +0400
-+++ 2/conftest.sh	2013-09-17 20:11:54.586886368 +0400
-@@ -1202,6 +1202,99 @@ compile_test() {
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/Makefile.kbuild NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/Makefile.kbuild
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/Makefile.kbuild	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/Makefile.kbuild	2015-08-28 10:57:54.455966846 +0100
+@@ -189,7 +189,11 @@
+ 	agp_memory \
+ 	scatterlist \
+ 	file_operations \
+-	sg_init_table
++	sg_init_table \
++	proc_create_data \
++	pde_data \
++	proc_remove \
++	get_num_physpages
+ else
+  COMPILE_TESTS = \
+ 	remap_page_range \
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/Makefile.nvidia NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/Makefile.nvidia
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/Makefile.nvidia	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/Makefile.nvidia	2015-08-28 10:57:54.455966846 +0100
+@@ -62,7 +62,10 @@
+ 	smp_call_function \
+ 	proc_dir_entry \
+ 	scatterlist \
+-	file_operations
++	file_operations \
++	proc_create_data \
++	pde_data \
++	proc_remove
+ 
+ DEFINES+=$(EXTRA_DEFINES)
+ 
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/conftest.sh NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/conftest.sh
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/conftest.sh	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/conftest.sh	2015-08-28 10:58:10.815050413 +0100
+@@ -128,6 +128,7 @@
+         if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]; then
+             MACH_CFLAGS="$MACH_CFLAGS -I$HEADERS/asm-x86/mach-default"
+             MACH_CFLAGS="$MACH_CFLAGS -I$SOURCES/arch/x86/include/asm/mach-default"
++            MACH_CFLAGS="$MACH_CFLAGS -I$HEADERS/arch/x86/include/uapi"
+         fi
+         if [ "$XEN_PRESENT" != "0" ]; then
+             MACH_CFLAGS="-I$HEADERS/asm-$ARCH/mach-xen $MACH_CFLAGS"
+@@ -137,16 +138,21 @@
+         if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]; then
+             MACH_CFLAGS="$MACH_CFLAGS -I$HEADERS/asm-x86/mach-default"
+             MACH_CFLAGS="$MACH_CFLAGS -I$SOURCES/arch/x86/include/asm/mach-default"
++            MACH_CFLAGS="$MACH_CFLAGS -I$HEADERS/arch/x86/include/uapi"
+         fi
+         if [ "$XEN_PRESENT" != "0" ]; then
+             MACH_CFLAGS="-I$HEADERS/asm/mach-xen $MACH_CFLAGS"
+         fi
+     fi
+ 
+-    CFLAGS="$BASE_CFLAGS $MACH_CFLAGS $OUTPUT_CFLAGS -I$HEADERS $AUTOCONF_CFLAGS"
++    CFLAGS="$BASE_CFLAGS $MACH_CFLAGS $OUTPUT_CFLAGS $AUTOCONF_CFLAGS"
++    CFLAGS="$CFLAGS -I$HEADERS -I$HEADERS/uapi -I$OUTPUT/include/generated/uapi"
+ 
+     if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]; then
+-        CFLAGS="$CFLAGS -I$SOURCES/arch/x86/include -I$OUTPUT/arch/x86/include/generated"
++        CFLAGS="$CFLAGS -I$SOURCES/arch/x86/include"
++        CFLAGS="$CFLAGS -I$SOURCES/arch/x86/include/uapi"
++        CFLAGS="$CFLAGS -I$OUTPUT/arch/x86/include/generated"
++        CFLAGS="$CFLAGS -I$OUTPUT/arch/x86/include/generated/uapi"
+     fi
+     if [ -n "$BUILD_PARAMS" ]; then
+         CFLAGS="$CFLAGS -D$BUILD_PARAMS"
+@@ -938,7 +944,7 @@
+             # and how many arguments it takes.
+             #
+             echo "$CONFTEST_PREAMBLE
+-            #include <acpi/acpi.h>
++            #include <linux/acpi.h>
+             void conftest_acpi_walk_namespace(void) {
+                 acpi_walk_namespace();
+             }" > conftest$$.c
+@@ -953,7 +959,7 @@
+             fi
+ 
+             echo "$CONFTEST_PREAMBLE
+-            #include <acpi/acpi.h>
++            #include <linux/acpi.h>
+             void conftest_acpi_walk_namespace(void) {
+                 acpi_walk_namespace(0, NULL, 0, NULL, NULL, NULL, NULL);
+             }" > conftest$$.c
+@@ -969,7 +975,7 @@
+             fi
+ 
+             echo "$CONFTEST_PREAMBLE
+-            #include <acpi/acpi.h>
++            #include <linux/acpi.h>
+             void conftest_acpi_walk_namespace(void) {
+                 acpi_walk_namespace(0, NULL, 0, NULL, NULL, NULL);
+             }" > conftest$$.c
+@@ -1202,6 +1208,99 @@
              fi
          ;;
  
@@ -101,41 +191,83 @@ diff -pur 1/conftest.sh 2/conftest.sh
      esac
  }
  
-diff -pur 1/Makefile.kbuild 2/Makefile.kbuild
---- 1/Makefile.kbuild	2012-09-01 02:04:44.000000000 +0400
-+++ 2/Makefile.kbuild	2013-09-17 20:11:54.586886368 +0400
-@@ -189,7 +189,11 @@ ifneq ($(PATCHLEVEL), 4)
- 	agp_memory \
- 	scatterlist \
- 	file_operations \
--	sg_init_table
-+	sg_init_table \
-+	proc_create_data \
-+	pde_data \
-+	proc_remove \
-+	get_num_physpages
- else
-  COMPILE_TESTS = \
- 	remap_page_range \
-diff -pur 1/Makefile.nvidia 2/Makefile.nvidia
---- 1/Makefile.nvidia	2012-09-01 02:04:44.000000000 +0400
-+++ 2/Makefile.nvidia	2013-09-17 20:11:54.586886368 +0400
-@@ -62,7 +62,10 @@ COMPILE_TESTS = \
- 	smp_call_function \
- 	proc_dir_entry \
- 	scatterlist \
--	file_operations
-+	file_operations \
-+	proc_create_data \
-+	pde_data \
-+	proc_remove
+@@ -1407,7 +1506,8 @@
+         FILE="linux/version.h"
+         SELECTED_MAKEFILE=""
  
- DEFINES+=$(EXTRA_DEFINES)
+-        if [ -f $HEADERS/$FILE -o -f $OUTPUT/include/$FILE ]; then
++        if [ -f $HEADERS/$FILE -o -f $OUTPUT/include/$FILE -o \
++             -f $OUTPUT/include/generated/uapi/$FILE ]; then
+             #
+             # We are either looking at a configured kernel source
+             # tree or at headers shipped for a specific kernel.
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv-i2c.c NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv-i2c.c
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv-i2c.c	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv-i2c.c	2015-08-28 10:57:54.456966851 +0100
+@@ -285,8 +285,6 @@
+ BOOL NV_API_CALL nv_i2c_del_adapter(nv_state_t *nv, void *data)
+ {
+     struct i2c_adapter *pI2cAdapter = (struct i2c_adapter *)data;
+-    int osstatus = 0;
+-    BOOL wasReleased = FALSE;
  
-diff -pur 1/nv.c 2/nv.c
---- 1/nv.c	2012-09-01 02:04:44.000000000 +0400
-+++ 2/nv.c	2013-09-17 20:25:21.970607458 +0400
-@@ -163,6 +163,91 @@ static int          nvl_remove_alloc(nv_
+ #if defined(KERNEL_2_4)
+     if (!NV_WEAK_SYMBOL_PRESENT(i2c_add_adapter))
+@@ -297,16 +295,11 @@
+ 
+     if (!pI2cAdapter) return FALSE;
+ 
+-    // attempt release with the OS
+-    osstatus = i2c_del_adapter(pI2cAdapter);
++    // release with the OS
++    i2c_del_adapter(pI2cAdapter);
++    os_free_mem(pI2cAdapter);
+ 
+-    if (!osstatus)
+-    {
+-        os_free_mem(pI2cAdapter);
+-        wasReleased = TRUE;
+-    }
+-
+-    return wasReleased;
++    return TRUE;
+ }
+ 
+ #else // (defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE))
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv-linux.h NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv-linux.h
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv-linux.h	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv-linux.h	2015-08-28 10:57:54.457966856 +0100
+@@ -64,6 +64,18 @@
+ #include <linux/module.h>
+ #include <linux/kmod.h>
+ 
++#include <linux/mm.h>
++
++#if !defined(VM_RESERVED)
++#define VM_RESERVED    0x00000000
++#endif
++#if !defined(VM_DONTEXPAND)
++#define VM_DONTEXPAND  0x00000000
++#endif
++#if !defined(VM_DONTDUMP)
++#define VM_DONTDUMP    0x00000000
++#endif
++
+ #include <linux/init.h>             /* module_init, module_exit         */
+ #include <linux/types.h>            /* pic_t, size_t, __u32, etc        */
+ #include <linux/errno.h>            /* error codes                      */
+@@ -128,6 +140,7 @@
+ 
+ #ifdef CONFIG_PROC_FS
+ #include <linux/proc_fs.h>
++#include <linux/seq_file.h>
+ #endif
+ 
+ #ifdef CONFIG_MTRR
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv.c NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv.c
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/nv.c	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/nv.c	2015-08-28 10:58:21.135103128 +0100
+@@ -163,6 +163,91 @@
  /* lock-related functions that should only be called from this file */
  static void nv_lock_init_locks(nv_state_t *nv);
  
@@ -227,7 +359,7 @@ diff -pur 1/nv.c 2/nv.c
  
  /***
   *** EXPORTS to Linux Kernel
-@@ -190,13 +275,6 @@ void          nv_kern_rc_timer(unsigned
+@@ -190,13 +275,6 @@
  static int    nv_kern_apm_event(struct pm_dev *, pm_request_t, void *);
  #endif
  
@@ -241,7 +373,7 @@ diff -pur 1/nv.c 2/nv.c
  int           nv_kern_ctl_open(struct inode *, struct file *);
  int           nv_kern_ctl_close(struct inode *, struct file *);
  unsigned int  nv_kern_ctl_poll(struct file *, poll_table *);
-@@ -490,156 +568,17 @@ static struct pci_dev* nv_get_pci_device
+@@ -490,156 +568,17 @@
      return NULL;
  }
  
@@ -406,7 +538,7 @@ diff -pur 1/nv.c 2/nv.c
  static void
  nvos_proc_add_text_file(
      struct proc_dir_entry *parent,
-@@ -647,26 +586,15 @@ nvos_proc_add_text_file(
+@@ -647,26 +586,15 @@
      const char *text
  )
  {
@@ -437,7 +569,7 @@ diff -pur 1/nv.c 2/nv.c
      while (entry) {
          struct proc_dir_entry *next = entry->next;
          if (entry->subdir)
-@@ -676,6 +604,7 @@ static void nvos_proc_remove_all(struct
+@@ -676,6 +604,7 @@
              break;
          entry = next;
      }
@@ -445,7 +577,71 @@ diff -pur 1/nv.c 2/nv.c
  }
  #endif
  
-@@ -2848,18 +2777,17 @@ void   NV_API_CALL  nv_set_dma_address_s
+@@ -797,8 +726,13 @@
+     unsigned long cr0 = read_cr0();
+     write_cr0(((cr0 & (0xdfffffff)) | 0x40000000));
+     wbinvd();
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
++    *cr4 = __read_cr4();
++    if (*cr4 & 0x80) __write_cr4(*cr4 & ~0x80);
++#else
+     *cr4 = read_cr4();
+     if (*cr4 & 0x80) write_cr4(*cr4 & ~0x80);
++#endif
+     __flush_tlb();
+ }
+ 
+@@ -808,7 +742,11 @@
+     wbinvd();
+     __flush_tlb();
+     write_cr0((cr0 & 0x9fffffff));
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
++    if (cr4 & 0x80) __write_cr4(cr4);
++#else
+     if (cr4 & 0x80) write_cr4(cr4);
++#endif
+ }
+ 
+ static int __determine_pat_mode()
+@@ -2348,9 +2286,8 @@
+         NV_PRINT_AT(NV_DBG_MEMINFO, at);
+         nv_vm_list_page_count(&at->page_table[i], pages);
+ 
+-        /* prevent the swapper from swapping it out */
+-        /* mark the memory i/o so the buffers aren't dumped on core dumps */
+         vma->vm_flags |= (VM_IO | VM_LOCKED | VM_RESERVED);
++        vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+     }
+ 
+     NV_VMA_FILE(vma) = file;
+@@ -2370,7 +2307,7 @@
+ 
+     nvl = NVL_FROM_FILEP(file);
+ 
+-    if (NV_IS_CONTROL_DEVICE(file->f_dentry->d_inode))
++    if (NV_IS_CONTROL_DEVICE(file->f_path.dentry->d_inode))
+         return nv_kern_ctl_poll(file, wait);
+ 
+     nvfp = NV_GET_NVFP(file);
+@@ -2565,7 +2502,7 @@
+     unsigned long i_arg
+ )
+ {
+-    return nv_kern_ioctl(file->f_dentry->d_inode, file, cmd, i_arg);
++    return nv_kern_ioctl(file->f_path.dentry->d_inode, file, cmd, i_arg);
+ }
+ 
+ long nv_kern_compat_ioctl(
+@@ -2574,7 +2511,7 @@
+     unsigned long i_arg
+ )
+ {
+-    return nv_kern_ioctl(file->f_dentry->d_inode, file, cmd, i_arg);
++    return nv_kern_ioctl(file->f_path.dentry->d_inode, file, cmd, i_arg);
+ }
+ 
+ /*
+@@ -2848,18 +2785,17 @@
  }
  
  static int
@@ -470,7 +666,7 @@ diff -pur 1/nv.c 2/nv.c
      dev = nv_get_pci_device(nv);
      if (!dev)
          return 0;
-@@ -2869,61 +2797,61 @@ nv_kern_read_cardinfo(char *page, char *
+@@ -2869,61 +2805,61 @@
          strcpy (tmpstr, "Unknown");
      }
      
@@ -559,7 +755,7 @@ diff -pur 1/nv.c 2/nv.c
  
      if (nv) {
          dev = nv_get_pci_device(nv);
-@@ -2934,13 +2862,12 @@ nv_kern_read_agpinfo(char *page, char **
+@@ -2934,13 +2870,12 @@
          if (!dev)
              return 0;
  
@@ -576,7 +772,7 @@ diff -pur 1/nv.c 2/nv.c
  #endif
      }
  
-@@ -2953,40 +2880,40 @@ nv_kern_read_agpinfo(char *page, char **
+@@ -2953,40 +2888,40 @@
      fw  = (status & 0x00000010) ? "Supported" : "Not Supported";
      sba = (status & 0x00000200) ? "Supported" : "Not Supported";
  
@@ -630,7 +826,7 @@ diff -pur 1/nv.c 2/nv.c
      dev = nvos_get_agp_device_by_class(PCI_CLASS_BRIDGE_HOST);
      if (!dev)
          return 0;
-@@ -3007,10 +2934,10 @@ nv_kern_read_status(char *page, char **s
+@@ -3007,10 +2942,10 @@
      command &= scratch;
  
      if (NV_AGP_ENABLED(nv) && (command & 0x100)) {
@@ -643,7 +839,7 @@ diff -pur 1/nv.c 2/nv.c
  
          // mask off agp rate. 
          // If this is agp 3.0, we need to shift the value
-@@ -3018,17 +2945,17 @@ nv_kern_read_status(char *page, char **s
+@@ -3018,17 +2953,17 @@
          if (status & 0x8) // agp 3.0
              agp_rate <<= 2;
  
@@ -665,7 +861,7 @@ diff -pur 1/nv.c 2/nv.c
  
          /*
           * If we find AGP is disabled, but the RM registry indicates it
-@@ -3042,7 +2969,7 @@ nv_kern_read_status(char *page, char **s
+@@ -3042,7 +2977,7 @@
          rm_read_registry_dword(nv, "NVreg", "XNvAGP", &agp_config);
  
          if (agp_config != NVOS_AGP_CONFIG_DISABLE_AGP && NV_AGP_FAILED(nv)) {
@@ -674,7 +870,7 @@ diff -pur 1/nv.c 2/nv.c
                    "AGP initialization failed, please check the ouput  \n"
                    "of the 'dmesg' command and/or your system log file \n"
                    "for additional information on this problem.        \n");
-@@ -3050,35 +2977,133 @@ nv_kern_read_status(char *page, char **s
+@@ -3050,35 +2985,133 @@
      }
  
      NV_PCI_DEV_PUT(dev);
@@ -822,54 +1018,10 @@ diff -pur 1/nv.c 2/nv.c
  }
  
  /***
-diff -pur 1/nv-i2c.c 2/nv-i2c.c
---- 1/nv-i2c.c	2012-09-01 02:04:44.000000000 +0400
-+++ 2/nv-i2c.c	2013-09-17 20:11:54.590219538 +0400
-@@ -285,8 +285,6 @@ void* NV_API_CALL nv_i2c_add_adapter(nv_
- BOOL NV_API_CALL nv_i2c_del_adapter(nv_state_t *nv, void *data)
- {
-     struct i2c_adapter *pI2cAdapter = (struct i2c_adapter *)data;
--    int osstatus = 0;
--    BOOL wasReleased = FALSE;
- 
- #if defined(KERNEL_2_4)
-     if (!NV_WEAK_SYMBOL_PRESENT(i2c_add_adapter))
-@@ -297,16 +295,11 @@ BOOL NV_API_CALL nv_i2c_del_adapter(nv_s
- 
-     if (!pI2cAdapter) return FALSE;
- 
--    // attempt release with the OS
--    osstatus = i2c_del_adapter(pI2cAdapter);
-+    // release with the OS
-+    i2c_del_adapter(pI2cAdapter);
-+    os_free_mem(pI2cAdapter);
- 
--    if (!osstatus)
--    {
--        os_free_mem(pI2cAdapter);
--        wasReleased = TRUE;
--    }
--
--    return wasReleased;
-+    return TRUE;
- }
- 
- #else // (defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE))
-diff -pur 1/nv-linux.h 2/nv-linux.h
---- 1/nv-linux.h	2012-09-01 02:04:44.000000000 +0400
-+++ 2/nv-linux.h	2013-09-17 20:11:54.590219538 +0400
-@@ -128,6 +128,7 @@
- 
- #ifdef CONFIG_PROC_FS
- #include <linux/proc_fs.h>
-+#include <linux/seq_file.h>
- #endif
- 
- #ifdef CONFIG_MTRR
-diff -pur 1/os-interface.c 2/os-interface.c
---- 1/os-interface.c	2012-09-01 02:04:44.000000000 +0400
-+++ 2/os-interface.c	2013-09-17 20:11:54.590219538 +0400
-@@ -261,7 +261,15 @@ NvU64 NV_API_CALL os_get_page_mask(void)
+diff -u -r NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/os-interface.c NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/os-interface.c
+--- NVIDIA-Linux-x86_64-96.43.23-pkg2/usr/src/nv/os-interface.c	2012-09-01 11:48:26.000000000 +0100
++++ NVIDIA-Linux-x86_64-96.43.23-pkg2-patched/usr/src/nv/os-interface.c	2015-08-28 10:57:54.457966856 +0100
+@@ -261,7 +261,15 @@
  
  NvU64 NV_API_CALL os_get_system_memory_size(void)
  {
