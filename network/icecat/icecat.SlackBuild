@@ -86,15 +86,12 @@ rm -rf $PRGNAM-$VERSION
 tar xvf $CWD/${PRGNAM}-$VERSION-gnu1.tar.bz2
 cd ${PRGNAM}-$VERSION
 
-# Fix a long standing bug that's prevented staying current on GTK+.
-# Thanks to the BLFS folks.  :-)
-cat << EOF >> layout/build/Makefile.in
-
-ifdef MOZ_ENABLE_CANVAS
-EXTRA_DSO_LDOPTS += \$(XLDFLAGS) -lX11 -lXrender
-endif
-
-EOF
+# Fix building with gcc-4.9.x
+# https://bugzilla.mozilla.org/show_bug.cgi?id=999496
+# Patch for freetype-2.6
+# https://bugzilla.mozilla.org/show_bug.cgi?id=1143411
+# Fix various CVEs
+for i in $CWD/patches/* ; do patch -p1 < $i ; done
 
 chown -R root:root .
 find -L . \
